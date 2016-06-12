@@ -145,7 +145,7 @@ def load_source_list(host, cookie):
                 if not resp.get('error'):
                     original_content_list.extend(resp.get('result')[0])
 
-        return_value = []
+        return_value = {}
         for content_item in original_content_list:
             return_value[content_item['title']] = content_item['uri']
         return return_value
