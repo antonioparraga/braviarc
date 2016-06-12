@@ -26,7 +26,7 @@ def _jdata_build(method, params):
     return ret
 
 
-def _wakeonlan(ethernet_address):
+def wakeonlan(ethernet_address):
     addr_byte = ethernet_address.split(':')
     hw_addr = struct.pack('BBBBBB', int(addr_byte[0], 16),
                           int(addr_byte[1], 16),
