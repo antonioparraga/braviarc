@@ -3,5 +3,5 @@
 Installation
 ------------
 
--  ``pip install git+https://github.com/aparraga/braviarc.git``
+-  ``pip3 install git+https://github.com/aparraga/braviarc.git``
 
