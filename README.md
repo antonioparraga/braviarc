@@ -35,7 +35,7 @@ if braviarc.is_connected():
   playing_content = braviarc.get_playing_info()
 
   #print current playing channel
-  print (playing_content.get('title')
+  print (playing_content.get('title'))
 
   #get volume info
   volume_info = braviarc.get_volume_info()
