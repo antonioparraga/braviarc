@@ -169,14 +169,14 @@ class BraviaRC:
         resp = self.bravia_req_json("sony/avContent", self._jdata_build("getPlayingContentInfo", None))
         if resp is not None and not resp.get('error'):
             playing_content_data = resp.get('result')[0]
-            return_value['program_name'] = playing_content_data.get('programTitle')
-            return_value['channel_name'] = playing_content_data.get('title')
-            return_value['program_media_type'] = playing_content_data.get('programMediaType')
-            return_value['channel_number'] = playing_content_data.get('dispNum')
+            return_value['programTitle'] = playing_content_data.get('programTitle')
+            return_value['title'] = playing_content_data.get('title')
+            return_value['programMediaType'] = playing_content_data.get('programMediaType')
+            return_value['dispNum'] = playing_content_data.get('dispNum')
             return_value['source'] = playing_content_data.get('source')
-            return_value['content_uri'] = playing_content_data.get('uri')
-            return_value['duration'] = playing_content_data.get('durationSec')
-            return_value['start_date_time'] = playing_content_data.get('startDateTime')
+            return_value['uri'] = playing_content_data.get('uri')
+            return_value['durationSec'] = playing_content_data.get('durationSec')
+            return_value['startDateTime'] = playing_content_data.get('startDateTime')
         return return_value
 
     def _refresh_commands(self):
