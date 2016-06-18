@@ -12,28 +12,19 @@ import json
 import socket
 import struct
 import requests
-import re
 
 TIMEOUT = 10
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _get_mac_address(ip_address):
-    from subprocess import Popen, PIPE
-
-    pid = Popen(["arp", "-n", ip_address], stdout=PIPE)
-    pid_component = pid.communicate()[0]
-    mac = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})".encode('UTF-8'),
-                    pid_component).groups()[0]
-    return mac
-
-
 class BraviaRC:
 
-    def __init__(self, host):
+    def __init__(self, host, mac=None):  # mac address is optional but necessary if we want to turn on the TV
         """Initialize the Sony Bravia RC class."""
+
         self._host = host
+        self._mac = mac
         self._cookies = None
         self._commands = []
 
@@ -90,10 +81,8 @@ class BraviaRC:
             return True
 
     def _wakeonlan(self):
-        mac = _get_mac_address(self._host)
-        if mac is not None:
-            mac = mac.decode('utf8')
-            addr_byte = mac.split(':')
+        if self._mac is not None:
+            addr_byte = self._mac.split(':')
             hw_addr = struct.pack('BBBBBB', int(addr_byte[0], 16),
                                   int(addr_byte[1], 16),
                                   int(addr_byte[2], 16),
