@@ -185,7 +185,7 @@ class BraviaRC:
         resp = self.bravia_req_json("sony/system", self._jdata_build("getPowerStatus", None))
         if resp is not None and not resp.get('error'):
             power_data = resp.get('result')[0]
-            return_value['status'] = power_data.get('status')
+            return_value = power_data.get('status')
         return return_value
 
     def _refresh_commands(self):
