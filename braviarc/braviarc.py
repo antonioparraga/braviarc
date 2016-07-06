@@ -179,6 +179,15 @@ class BraviaRC:
             return_value['startDateTime'] = playing_content_data.get('startDateTime')
         return return_value
 
+    def get_power_status(self):
+        """Get power status."""
+        return_value = {}
+        resp = self.bravia_req_json("sony/system", self._jdata_build("getPowerStatus", None))
+        if resp is not None and not resp.get('error'):
+            power_data = resp.get('result')[0]
+            return_value['status'] = power_data.get('status')
+        return return_value
+
     def _refresh_commands(self):
         resp = self.bravia_req_json("sony/system", self._jdata_build("getRemoteControllerInfo", None))
         if not resp.get('error'):
