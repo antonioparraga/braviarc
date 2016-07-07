@@ -95,7 +95,7 @@ class BraviaRC:
             socket_instance.sendto(msg, ('<broadcast>', 9))
             socket_instance.close()
 
-    def send_req_ircc(self, params):
+    def send_req_ircc(self, params, log_errors=True):
         """Send an IRCC command via HTTP to Sony Bravia."""
         headers = {'SOAPACTION': 'urn:schemas-sony-com:service:IRCC:1#X_SendIRCC'}
         data = ("<?xml version=\"1.0\"?><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org" +
@@ -111,15 +111,17 @@ class BraviaRC:
                                      data=data,
                                      timeout=TIMEOUT)
         except requests.exceptions.HTTPError as exception_instance:
-            _LOGGER.error("[W] HTTPError: " + str(exception_instance))
+            if log_errors:
+                _LOGGER.error("HTTPError: " + str(exception_instance))
 
         except Exception as exception_instance:  # pylint: disable=broad-except
-            _LOGGER.error("[W] Exception: " + str(exception_instance))
+            if log_errors:
+                _LOGGER.error("Exception: " + str(exception_instance))
         else:
             content = response.content
             return content
 
-    def bravia_req_json(self, url, params):
+    def bravia_req_json(self, url, params, log_errors=True):
         """ Send request command via HTTP json to Sony Bravia."""
         try:
             response = requests.post('http://'+self._host+'/'+url,
@@ -127,10 +129,12 @@ class BraviaRC:
                                      cookies=self._cookies,
                                      timeout=TIMEOUT)
         except requests.exceptions.HTTPError as exception_instance:
-            _LOGGER.error("[W] HTTPError: " + str(exception_instance))
+            if log_errors:
+                _LOGGER.error("HTTPError: " + str(exception_instance))
 
         except Exception as exception_instance:  # pylint: disable=broad-except
-            _LOGGER.error("[W] Exception: " + str(exception_instance))
+            if log_errors:
+                _LOGGER.error("Exception: " + str(exception_instance))
 
         else:
             html = json.loads(response.content.decode('utf-8'))
@@ -180,12 +184,15 @@ class BraviaRC:
         return return_value
 
     def get_power_status(self):
-        """Get power status."""
-        return_value = {}
-        resp = self.bravia_req_json("sony/system", self._jdata_build("getPowerStatus", None))
-        if resp is not None and not resp.get('error'):
-            power_data = resp.get('result')[0]
-            return_value = power_data.get('status')
+        """Get power status: off, active, standby"""
+        return_value = 'off' # by default the TV is turned off
+        try:
+            resp = self.bravia_req_json("sony/system", self._jdata_build("getPowerStatus", None), False)
+            if resp is not None and not resp.get('error'):
+                power_data = resp.get('result')[0]
+                return_value = power_data.get('status')
+        except:  # pylint: disable=broad-except
+            pass
         return return_value
 
     def _refresh_commands(self):
