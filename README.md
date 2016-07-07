@@ -31,6 +31,10 @@ braviarc.connect(pin, 'my_device_id', 'my device name')
 #check connection
 if braviarc.is_connected():
 
+  #get power status
+  power_status = braviarc.get_power_status()
+  print (power_status)
+
   #get playing info
   playing_content = braviarc.get_playing_info()
 
