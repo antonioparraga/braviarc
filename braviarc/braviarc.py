@@ -58,6 +58,7 @@ class BraviaRC:
         try:
             response = requests.post('http://'+self._host+'/sony/accessControl',
                                      data=authorization, headers=headers, timeout=TIMEOUT)
+            response.raise_for_status()
 
         except requests.exceptions.HTTPError as exception_instance:
             _LOGGER.error("[W] HTTPError: " + str(exception_instance))
