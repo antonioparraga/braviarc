@@ -98,7 +98,7 @@ class BraviaRC:
 
     def send_req_ircc(self, params, log_errors=True):
         """Send an IRCC command via HTTP to Sony Bravia."""
-        headers = {'SOAPACTION': 'urn:schemas-sony-com:service:IRCC:1#X_SendIRCC'}
+        headers = {'SOAPACTION': '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"'}
         data = ("<?xml version=\"1.0\"?><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org" +
                 "/soap/envelope/\" " +
                 "s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><s:Body>" +
@@ -231,6 +231,10 @@ class BraviaRC:
     def turn_on(self):
         """Turn the media player on."""
         self._wakeonlan()
+        # Try using the power on command incase the WOL doesn't work
+        POWER_ON_CMD = 'AAAAAQAAAAEAAAAuAw=='
+        if self.get_power_status() != 'active':
+            self.send_req_ircc(POWER_ON_CMD)
 
     def turn_off(self):
         """Turn off media player."""
