@@ -232,9 +232,8 @@ class BraviaRC:
         """Turn the media player on."""
         self._wakeonlan()
         # Try using the power on command incase the WOL doesn't work
-        POWER_ON_CMD = 'AAAAAQAAAAEAAAAuAw=='
         if self.get_power_status() != 'active':
-            self.send_req_ircc(POWER_ON_CMD)
+            self.send_req_ircc(self.get_command_code('TvPower'))
 
     def turn_off(self):
         """Turn off media player."""
