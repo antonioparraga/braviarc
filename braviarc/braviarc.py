@@ -8,6 +8,7 @@ dedicated to Isabel
 """
 import logging
 import base64
+import collections
 import json
 import socket
 import struct
@@ -147,10 +148,10 @@ class BraviaRC:
 
     def load_source_list(self):
         """ Load source list from Sony Bravia."""
+        original_content_list = []
         resp = self.bravia_req_json("sony/avContent",
                                     self._jdata_build("getSourceList", {"scheme": "tv"}))
         if not resp.get('error'):
-            original_content_list = []
             results = resp.get('result')[0]
             for result in results:
                 if result['source'] == 'tv:dvbc':  # via cable
@@ -163,11 +164,22 @@ class BraviaRC:
                                                 self._jdata_build("getContentList", {"source": "tv:dvbt"}))
                     if not resp.get('error'):
                         original_content_list.extend(resp.get('result')[0])
+        
+        resp = self.bravia_req_json("sony/avContent",
+                                    self._jdata_build("getSourceList", {"scheme": "extInput"}))
+        if not resp.get('error'):
+            results = resp.get('result')[0]
+            for result in results:
+                if result['source'] == 'extInput:hdmi':  # hdmi input
+                    resp = self.bravia_req_json("sony/avContent",
+                                                self._jdata_build("getContentList", {"source": "extInput:hdmi"}))
+                    if not resp.get('error'):
+                        original_content_list.extend(resp.get('result')[0])
 
-            return_value = {}
-            for content_item in original_content_list:
-                return_value[content_item['title']] = content_item['uri']
-            return return_value
+        return_value = collections.OrderedDict()
+        for content_item in original_content_list:
+            return_value[content_item['title']] = content_item['uri']
+        return return_value
 
     def get_playing_info(self):
         return_value = {}
