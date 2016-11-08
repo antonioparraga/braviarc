@@ -149,15 +149,15 @@ class BraviaRC:
     def get_source(self, source):
         """Returns list of Sources"""
         original_content_list = []
-        stIdx = 0
+        content_index = 0
         while True:
             resp = self.bravia_req_json("sony/avContent",
-                                        self._jdata_build("getContentList", {"source": source, "stIdx": stIdx}))
+                                        self._jdata_build("getContentList", {"source": source, "stIdx": content_index}))
             if not resp.get('error'):
                 if len(resp.get('result')[0]) == 0:
                     break
                 else:
-                    stIdx = resp.get('result')[0][-1]['index']+1
+                    content_index = resp.get('result')[0][-1]['index']+1
                 original_content_list.extend(resp.get('result')[0])
             else:
                 break
