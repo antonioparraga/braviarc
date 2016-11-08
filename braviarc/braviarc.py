@@ -146,6 +146,23 @@ class BraviaRC:
         """Sends a command to the TV."""
         self.send_req_ircc(self.get_command_code(command))
 
+    def get_source(self, source):
+        """Returns list of Sources"""
+        original_content_list = []
+        stIdx = 0
+        while True:
+            resp = self.bravia_req_json("sony/avContent",
+                                        self._jdata_build("getContentList", {"source": source, "stIdx": stIdx}))
+            if not resp.get('error'):
+                if len(resp.get('result')[0]) == 0:
+                    break
+                else:
+                    stIdx = resp.get('result')[0][-1]['index']+1
+                original_content_list.extend(resp.get('result')[0])
+            else:
+                break
+        return original_content_list
+
     def load_source_list(self):
         """ Load source list from Sony Bravia."""
         original_content_list = []
@@ -154,17 +171,9 @@ class BraviaRC:
         if not resp.get('error'):
             results = resp.get('result')[0]
             for result in results:
-                if result['source'] == 'tv:dvbc':  # via cable
-                    resp = self.bravia_req_json("sony/avContent",
-                                                self._jdata_build("getContentList", {"source": "tv:dvbc"}))
-                    if not resp.get('error'):
-                        original_content_list.extend(resp.get('result')[0])
-                elif result['source'] == 'tv:dvbt':  # via DTT
-                    resp = self.bravia_req_json("sony/avContent",
-                                                self._jdata_build("getContentList", {"source": "tv:dvbt"}))
-                    if not resp.get('error'):
-                        original_content_list.extend(resp.get('result')[0])
-        
+                if result['source'] in ['tv:dvbc', 'tv:dvbt']:  # tv:dvbc = via cable, tv:dvbt = via DTT
+                    original_content_list.extend(self.get_source(result['source']))
+
         resp = self.bravia_req_json("sony/avContent",
                                     self._jdata_build("getSourceList", {"scheme": "extInput"}))
         if not resp.get('error'):
