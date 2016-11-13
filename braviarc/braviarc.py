@@ -37,6 +37,22 @@ class BraviaRC:
         return ret
 
     def connect(self, pin, clientid, nickname):
+        """Connect to TV and get authentication cookie.
+
+        Parameters
+        ---------
+        pin: str
+            Pin code show by TV (or 0000 to get Pin Code).
+        clientid: str
+            Client ID.
+        nickname: str
+            Client human friendly name.
+
+        Returns
+        -------
+        bool
+            True if connected.
+        """
         authorization = json.dumps(
             {"method": "actRegister",
              "params": [{"clientid": clientid,
@@ -70,9 +86,11 @@ class BraviaRC:
             return False
 
         else:
-            _LOGGER.info(json.dumps(response.json(), indent=4))
-            self._cookies = response.cookies
-            return True
+            resp = response.json()
+            _LOGGER.debug(json.dumps(resp, indent=4))
+            if resp is None or not resp.get('error'):
+                self._cookies = response.cookies
+                return True
 
         return False
 
