@@ -71,7 +71,7 @@ class BraviaRC:
 
         else:
             resp = response.json()
-            _LOGGER.info(json.dumps(resp, indent=4))
+            _LOGGER.debug(json.dumps(resp, indent=4))
             if resp is None or not resp.get('error'):
                 self._cookies = response.cookies
                 return True
