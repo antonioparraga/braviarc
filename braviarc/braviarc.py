@@ -28,6 +28,7 @@ class BraviaRC:
         self._mac = mac
         self._cookies = None
         self._commands = []
+        self._content_mapping = []
 
     def _jdata_build(self, method, params):
         if params:
@@ -274,6 +275,8 @@ class BraviaRC:
 
     def select_source(self, source):
         """Set the input source."""
+        if len(self._content_mapping) == 0:
+            self._content_mapping = self.load_source_list()
         if source in self._content_mapping:
             uri = self._content_mapping[source]
             self.play_content(uri)
