@@ -198,9 +198,9 @@ class BraviaRC:
         if not resp.get('error'):
             results = resp.get('result')[0]
             for result in results:
-                if result['source'] == 'extInput:hdmi':  # hdmi input
+                if result['source'] in ('extInput:hdmi', 'extInput:composite', 'extInput:component'):  # physical inputs
                     resp = self.bravia_req_json("sony/avContent",
-                                                self._jdata_build("getContentList", {"source": "extInput:hdmi"}))
+                                                self._jdata_build("getContentList", result))
                     if not resp.get('error'):
                         original_content_list.extend(resp.get('result')[0])
 
