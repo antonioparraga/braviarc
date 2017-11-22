@@ -29,6 +29,7 @@ class BraviaRC:
         self._cookies = None
         self._commands = []
         self._content_mapping = []
+        self._app_list = {}
 
     def _jdata_build(self, method, params):
         if params:
@@ -267,6 +268,67 @@ class BraviaRC:
         """Set volume level, range 0..1."""
         self.bravia_req_json("sony/audio", self._jdata_build("setAudioVolume", {"target": "speaker",
                                                                                 "volume": volume * 100}))
+
+    def _recreate_auth_cookie(self):
+        """
+        The default cookie is for URL/sony. For some commands we need it for the root path
+        """
+        cookies = requests.cookies.RequestsCookieJar()
+        cookies.set("auth", self._cookies.get("auth"))
+        return cookies
+
+    def load_app_list(self, log_errors=True):
+        """Get the list of installed apps"""
+        headers = {}
+        parsed_objects = {}
+
+        try:
+            cookies = self._recreate_auth_cookie()
+            response = requests.get('http://' + self._host + '/DIAL/sony/applist',
+                                     cookies=cookies,
+                                     timeout=TIMEOUT)
+        except requests.exceptions.HTTPError as exception_instance:
+            if log_errors:
+                _LOGGER.error("HTTPError: " + str(exception_instance))
+
+        except Exception as exception_instance:  # pylint: disable=broad-except
+            if log_errors:
+                _LOGGER.error("Exception: " + str(exception_instance))
+        else:
+            content = response.content
+            from xml.dom import minidom
+            parsed_xml = minidom.parseString(content)
+            for obj in parsed_xml.getElementsByTagName("app"):
+                if obj.getElementsByTagName("name")[0].firstChild and obj.getElementsByTagName("id")[0].firstChild:
+                    parsed_objects[str(obj.getElementsByTagName("name")[0].firstChild.nodeValue)] = str(obj.getElementsByTagName("id")[0].firstChild.nodeValue)
+
+        return parsed_objects
+
+    def start_app(self, app_name, log_errors=True):
+        """Start an app by name"""
+        if len(self._app_list) == 0:
+            self._app_list = self.load_app_list(log_errors=log_errors)
+        if app_name in self._app_list:
+            return self._start_app(self._app_list[app_name], log_errors=log_errors)
+
+    def _start_app(self, app_id, log_errors=True):
+        """Start an app by id"""
+        headers = {}
+        try:
+            cookies = self._recreate_auth_cookie()
+            response = requests.post('http://' + self._host + '/DIAL/apps/' + app_id,
+                                     cookies=cookies,
+                                     timeout=TIMEOUT)
+        except requests.exceptions.HTTPError as exception_instance:
+            if log_errors:
+                _LOGGER.error("HTTPError: " + str(exception_instance))
+
+        except Exception as exception_instance:  # pylint: disable=broad-except
+            if log_errors:
+                _LOGGER.error("Exception: " + str(exception_instance))
+        else:
+            content = response.content
+            return content
 
     def turn_on(self):
         """Turn the media player on."""
