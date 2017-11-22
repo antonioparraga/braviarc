@@ -49,6 +49,13 @@ if braviarc.is_connected():
 
   #change channel
   braviarc.play_content(uri)
+  
+  #get app list
+  app_info = braviarc.load_app_list()
+  print (app_info)
+  
+  #start a given app
+  braviarc.start_app("Netflix")
 
   #turn off the TV
   braviarc.turn_off()
