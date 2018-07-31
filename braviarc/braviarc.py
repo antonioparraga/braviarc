@@ -141,6 +141,7 @@ class BraviaRC(object):
         """Send an IRCC command via HTTP to Sony Bravia."""
         headers = {'SOAPACTION':
                    '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"'}
+
         if self._psk is not None:
             headers['X-Auth-PSK'] = self._psk
 
@@ -155,13 +156,13 @@ class BraviaRC(object):
         irccCode = SubElement(sendIRCC, "IRCCCode")
         irccCode.text = params
 
-        xml_str = "<?xml version=\"1.0\"?>{}".format(tostring(root))
+        xml_str = tostring(root, encoding='utf8')
 
         try:
             response = requests.post('http://' + self._host + '/sony/IRCC',
                                      headers=headers,
                                      cookies=self._cookies,
-                                     data=data,
+                                     data=xml_str,
                                      timeout=TIMEOUT)
         except requests.exceptions.HTTPError as exception_instance:
             if log_errors:
