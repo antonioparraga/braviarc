@@ -467,7 +467,7 @@ class BraviaRC(object):
         """Volume down media player."""
         self.send_req_ircc(self.get_command_code('VolumeDown'))
 
-    def mute_volume(self, mute):
+    def mute_volume(self):
         """Send mute command."""
         self.send_req_ircc(self.get_command_code('Mute'))
 
