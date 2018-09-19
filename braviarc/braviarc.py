@@ -239,7 +239,7 @@ class BraviaRC:
 
     def _refresh_commands(self):
         resp = self.bravia_req_json("sony/system", self._jdata_build("getRemoteControllerInfo", None))
-        if not resp.get('error'):
+        if resp is not None and not resp.get('error'):
             self._commands = resp.get('result')[1]
         else:
             _LOGGER.error("JSON request error: " + json.dumps(resp, indent=4))
