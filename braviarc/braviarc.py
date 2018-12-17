@@ -204,6 +204,12 @@ class BraviaRC:
                                                 self._jdata_build("getContentList", result))
                     if not resp.get('error'):
                         original_content_list.extend(resp.get('result')[0])
+        
+        resp = self.bravia_req_json("sony/appControl",
+                                    self._jdata_build("getApplicationList", None))
+        if not resp.get('error'):
+            results = resp.get('result')[0]
+            original_content_list+=results
 
         return_value = collections.OrderedDict()
         for content_item in original_content_list:
@@ -367,7 +373,10 @@ class BraviaRC:
 
     def play_content(self, uri):
         """Play content by URI."""
-        self.bravia_req_json("sony/avContent", self._jdata_build("setPlayContent", {"uri": uri}))
+        if uri.startswith("com.sony.dtv"):
+            self.bravia_req_json("sony/appControl", self._jdata_build("setActiveApp", {"uri": uri}))
+        else:
+            self.bravia_req_json("sony/avContent", self._jdata_build("setPlayContent", {"uri": uri}))
 
     def media_play(self):
         """Send play command."""
