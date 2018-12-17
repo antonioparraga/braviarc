@@ -243,7 +243,7 @@ class BraviaRC(object):
                 # tv:dvbc = via cable
                 # tv:dvbt = via DTT
                 # tv:dvbs = via satellite
-                if result['source'] in ['tv:dvbc', 'tv:dvbt', 'tv:dvbs']:
+                if result['source'] in ['tv:dvbc', 'tv:dvbt', 'tv:isdbt', 'tv:isdbbs', 'tv:isdbcs']:
                     source = self.get_source(result['source'])
                     original_content_list.extend(source)
 
@@ -260,6 +260,12 @@ class BraviaRC(object):
                     resp = self.bravia_req_json("sony/avContent", data)
                     if not resp.get('error'):
                         original_content_list.extend(resp.get('result')[0])
+        
+        resp = self.bravia_req_json("sony/appControl",
+                                    self._jdata_build("getApplicationList", None))
+        if not resp.get('error'):
+            results = resp.get('result')[0]
+            original_content_list+=results
 
         return_value = collections.OrderedDict()
         for content_item in original_content_list:
@@ -325,9 +331,10 @@ class BraviaRC(object):
         return return_value
 
     def _refresh_commands(self):
+
         jdata = self._jdata_build("getRemoteControllerInfo")
-        resp = self.bravia_req_json("sony/system", jdata)
-        if not resp.get('error'):
+        resp = self.bravia_req_json("sony/system", self._jdata_build("getRemoteControllerInfo", None))
+        if resp is not None and not resp.get('error'):
             self._commands = resp.get('result')[1]
         else:
             _LOGGER.error("JSON request error: " + json.dumps(resp, indent=4))
@@ -356,7 +363,8 @@ class BraviaRC(object):
 
     def set_volume_level(self, volume):
         """Set volume level, range 0..1."""
-        payload = {"target": "speaker", "volume": volume * 100}
+        api_volume = str(int(round(volume * 100)))
+        payload = {"target": "speaker", "volume": api_volume}
         self.bravia_req_json("sony/audio",
                              self._jdata_build("setAudioVolume", payload))
 
@@ -442,7 +450,10 @@ class BraviaRC(object):
         self._wakeonlan()
         # Try using the power on command incase the WOL doesn't work
         if self.get_power_status() != 'active':
-            self.send_req_ircc(self.get_command_code('TvPower'))
+            command = self.get_command_code('TvPower')
+            if command is None:
+                command = 'AAAAAQAAAAEAAAAuAw=='
+            self.send_req_ircc(command)
 
     def turn_on_command(self):
         """Turn the media player on using command.
@@ -481,8 +492,10 @@ class BraviaRC(object):
 
     def play_content(self, uri):
         """Play content by URI."""
-        self.bravia_req_json("sony/avContent",
-                             self._jdata_build("setPlayContent", {"uri": uri}))
+        if uri.startswith("com.sony.dtv"):
+            self.bravia_req_json("sony/appControl", self._jdata_build("setActiveApp", {"uri": uri}))
+        else:
+            self.bravia_req_json("sony/avContent", self._jdata_build("setPlayContent", {"uri": uri}))
 
     def media_play(self):
         """Send play command."""
