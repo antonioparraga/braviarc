@@ -216,8 +216,8 @@ class BraviaRC(object):
         """Returns list of Sources"""
         original_content_list = []
         content_index = 0
-        payload = {"source": source, "stIdx": content_index}
         while True:
+            payload = {"source": source, "stIdx": content_index}
             resp = self.bravia_req_json("sony/avContent",
                                         self._jdata_build("getContentList",
                                                           payload))
