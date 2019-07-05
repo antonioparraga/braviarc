@@ -243,7 +243,7 @@ class BraviaRC(object):
                 # tv:dvbc = via cable
                 # tv:dvbt = via DTT
                 # tv:dvbs = via satellite
-                if result['source'] in ['tv:dvbc', 'tv:dvbt', 'tv:isdbt', 'tv:isdbbs', 'tv:isdbcs']:
+                if result['source'] in ['tv:dvbc', 'tv:dvbt', 'tv:isdbt', 'tv:isdbbs', 'tv:isdbcs', 'tv:isdbgt']:
                     source = self.get_source(result['source'])
                     original_content_list.extend(source)
 
