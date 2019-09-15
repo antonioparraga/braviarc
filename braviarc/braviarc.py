@@ -39,17 +39,17 @@ class BraviaRC(object):
         self._content_mapping = []
         self._app_list = {}
 
-    def _jdata_build(self, method, params=None):
+    def _jdata_build(self, method, params=None, apiVersion="1.0"):
         if params:
             ret = json.dumps({"method": method,
                               "params": [params],
                               "id": 1,
-                              "version": "1.0"})
+                              "version": apiVersion})
         else:
             ret = json.dumps({"method": method,
                               "params": [],
                               "id": 1,
-                              "version": "1.0"})
+                              "version": apiVersion})
         return ret
 
     def connect(self, pin, clientid, nickname):
@@ -567,3 +567,30 @@ class BraviaRC(object):
         return_value['media_position_perc'] = perc_playingtime
 
         return return_value
+    
+    def get_led_status(self):
+        """Get LED status: off, active, standby.
+           By default the TV is turned off."""
+
+        return_value = 'off'
+        try:
+            resp = self.bravia_req_json("sony/system",
+                                        self._jdata_build("getLEDIndicatorStatus"),
+                                        False)
+            if resp is not None and not resp.get('error'):
+                led_data = resp.get('result')[0]
+                return_value = led_data.get('mode')
+        except:  # pylint: disable=broad-except
+            pass
+        return return_value
+
+    def set_led_status(self, mode, status):
+        """Set LED mode/status -  
+            mode: "Demo" | "AutoBrightnessAdjust" | "Dark" | "SimpleResponse" | "Off"
+            status: true | false | null """
+        
+        payload = {"mode": mode, "status": status}
+
+        self.bravia_req_json("sony/system",
+            self._jdata_build("setLEDIndicatorStatus", payload, apiVersion="1.1"))
+        
