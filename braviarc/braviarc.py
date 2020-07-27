@@ -95,15 +95,15 @@ class BraviaRC(object):
             response.raise_for_status()
 
         except requests.exceptions.HTTPError as exception_instance:
-            _LOGGER.error("[W] HTTPError: " + str(exception_instance))
+            _LOGGER.exception("[W] HTTPError: " + str(exception_instance))
             return False
 
         except requests.exceptions.Timeout as exception_instance:
-            _LOGGER.error("[W] Timeout occurred: " + str(exception_instance))
+            _LOGGER.exception("[W] Timeout occurred: " + str(exception_instance))
             return False
 
         except Exception as exception_instance:  # pylint: disable=broad-except
-            _LOGGER.error("[W] Exception: " + str(exception_instance))
+            _LOGGER.exception("[W] Exception: " + str(exception_instance))
             return False
 
         else:
@@ -255,14 +255,13 @@ class BraviaRC(object):
             for result in results:
                 # physical inputs
                 if result['source'] in ('extInput:hdmi', 'extInput:composite',
-                                        'extInput:component'):
+                                        'extInput:component', 'extInput:cec'):
                     data = self._jdata_build("getContentList", result)
                     resp = self.bravia_req_json("sony/avContent", data)
                     if not resp.get('error'):
                         original_content_list.extend(resp.get('result')[0])
+                        #print(resp.get('result'))
         
-        resp = self.bravia_req_json("sony/appControl",
-                                    self._jdata_build("getApplicationList", None))
         if not resp.get('error'):
             results = resp.get('result')[0]
             original_content_list+=results
@@ -295,10 +294,13 @@ class BraviaRC(object):
         return_value = {}
         resp = self.bravia_req_json("sony/system",
                                     self._jdata_build("getSystemInformation"))
+        _LOGGER.info(resp)
         if resp is not None and not resp.get('error'):
             system_content_data = resp.get('result')[0]
             return_value['name'] = system_content_data.get('name')
             return_value['model'] = system_content_data.get('model')
+            return_value['mac'] = system_content_data.get('mac')
+            return_value['serial'] = system_content_data.get('serial')
             return_value['language'] = system_content_data.get('language')
         return return_value
 
@@ -384,10 +386,9 @@ class BraviaRC(object):
         if self._psk is not None:
             headers['X-Auth-PSK'] = self._psk
 
-        parsed_objects = {}
+        parsed_objects = []
 
         url = 'http://{}/DIAL/sony/applist'.format(self._host)
-
         try:
             cookies = self._recreate_auth_cookie()
             response = requests.get(url, cookies=cookies, timeout=TIMEOUT,
@@ -398,7 +399,7 @@ class BraviaRC(object):
 
         except Exception as exception_instance:  # pylint: disable=broad-except
             if log_errors:
-                _LOGGER.error("Exception: " + str(exception_instance))
+                _LOGGER.exception("Exception: " + str(exception_instance))
         else:
             content = response.content
             from xml.dom import minidom
@@ -408,8 +409,12 @@ class BraviaRC(object):
                    obj.getElementsByTagName("id")[0].firstChild:
                     name = obj.getElementsByTagName("name")[0]
                     id_elm = obj.getElementsByTagName("id")[0]
-                    parsed_objects[str(name.firstChild.nodeValue)] = \
-                        str(id_elm.firstChild.nodeValue)
+                    icon_url = obj.getElementsByTagName("icon_url")[0]
+                    parsed_objects.append ({
+                        "id": str(id_elm.firstChild.nodeValue),
+                        "name": str(name.firstChild.nodeValue),
+                        "icon_url": str(icon_url.firstChild.nodeValue),
+                    })
 
         return parsed_objects
 
@@ -417,18 +422,20 @@ class BraviaRC(object):
         """Start an app by name"""
         if len(self._app_list) == 0:
             self._app_list = self.load_app_list(log_errors=log_errors)
-        if app_name in self._app_list:
-            return self._start_app(self._app_list[app_name],
-                                   log_errors=log_errors)
+        for app in self._app_list:
+            if app['id'] == app_name or app['name'] == app_name:
+                return self._start_app(app,
+                                    log_errors=log_errors)
+        _LOGGER.warn('Can\'t find app for ' + app_name)
 
-    def _start_app(self, app_id, log_errors=True):
+    def _start_app(self, app, log_errors=True):
         """Start an app by id"""
         headers = {}
 
         if self._psk is not None:
             headers['X-Auth-PSK'] = self._psk
 
-        url = 'http://{}/DIAL/apps/{}'.format(self._host, app_id)
+        url = 'http://{}/DIAL/apps/{}'.format(self._host, app['id'])
 
         try:
             cookies = self._recreate_auth_cookie()
@@ -469,6 +476,10 @@ class BraviaRC(object):
     def turn_off(self):
         """Turn off media player."""
         self.send_req_ircc(self.get_command_code('PowerOff'))
+
+    def turn_off_command(self):
+        """Turn off media player using the rest-api for Android TV."""
+        self.bravia_req_json("sony/system", self._jdata_build("setPowerStatus", {"status": False}))
 
     def volume_up(self):
         """Volume up the media player."""
@@ -566,4 +577,27 @@ class BraviaRC(object):
         return_value['media_position'] = playingtime.seconds
         return_value['media_position_perc'] = perc_playingtime
 
+        return return_value
+
+    def get_network_info(self):
+        """Get info on network."""
+        return_value = {}
+        resp = self.bravia_req_json("sony/system", self._jdata_build("getNetworkSettings", None))
+        if resp is not None and not resp.get('error'):
+            network_content_data = resp.get('result')[0]
+            return_value['mac'] = network_content_data[0]['hwAddr']
+            return_value['ip'] = network_content_data[0]['ipAddrV4']
+            return_value['gateway'] = network_content_data[0]['gateway']
+        return return_value
+
+    def get_current_external_input_status(self):
+        """Get current external input status."""
+        return_value = []
+        resp = self.bravia_req_json(
+            "sony/avContent",
+            self._jdata_build("getCurrentExternalInputsStatus", None),
+            log_errors=False,
+        )
+        if resp is not None and not resp.get("error"):
+            return_value = resp.get("result")[0]
         return return_value
