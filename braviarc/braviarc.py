@@ -381,18 +381,10 @@ class BraviaRC(object):
 
     def load_app_list(self, log_errors=True):
         """Get the list of installed apps"""
-        headers = {}
-
-        if self._psk is not None:
-            headers['X-Auth-PSK'] = self._psk
-
-        parsed_objects = []
-
-        url = 'http://{}/DIAL/sony/applist'.format(self._host)
         try:
             cookies = self._recreate_auth_cookie()
-            response = requests.get(url, cookies=cookies, timeout=TIMEOUT,
-                                    headers=headers)
+            response = self.bravia_req_json("sony/appControl", self._jdata_build("getApplicationList"))
+            return response['result'][0]
         except requests.exceptions.HTTPError as exception_instance:
             if log_errors:
                 _LOGGER.error("HTTPError: " + str(exception_instance))
@@ -400,47 +392,12 @@ class BraviaRC(object):
         except Exception as exception_instance:  # pylint: disable=broad-except
             if log_errors:
                 _LOGGER.exception("Exception: " + str(exception_instance))
-        else:
-            content = response.content
-            from xml.dom import minidom
-            parsed_xml = minidom.parseString(content)
-            for obj in parsed_xml.getElementsByTagName("app"):
-                if obj.getElementsByTagName("name")[0].firstChild and \
-                   obj.getElementsByTagName("id")[0].firstChild:
-                    name = obj.getElementsByTagName("name")[0]
-                    id_elm = obj.getElementsByTagName("id")[0]
-                    icon_url = obj.getElementsByTagName("icon_url")[0]
-                    parsed_objects.append ({
-                        "id": str(id_elm.firstChild.nodeValue),
-                        "name": str(name.firstChild.nodeValue),
-                        "icon_url": str(icon_url.firstChild.nodeValue),
-                    })
 
-        return parsed_objects
-
-    def start_app(self, app_name, log_errors=True):
-        """Start an app by name"""
-        if len(self._app_list) == 0:
-            self._app_list = self.load_app_list(log_errors=log_errors)
-        for app in self._app_list:
-            if app['id'] == app_name or app['name'] == app_name:
-                return self._start_app(app,
-                                    log_errors=log_errors)
-        _LOGGER.warn('Can\'t find app for ' + app_name)
-
-    def _start_app(self, app, log_errors=True):
-        """Start an app by id"""
-        headers = {}
-
-        if self._psk is not None:
-            headers['X-Auth-PSK'] = self._psk
-
-        url = 'http://{}/DIAL/apps/{}'.format(self._host, app['id'])
-
+    def start_app(self, uri, log_errors=True):
         try:
             cookies = self._recreate_auth_cookie()
-            response = requests.post(url, cookies=cookies, timeout=TIMEOUT,
-                                     headers=headers)
+            response = self.bravia_req_json("sony/appControl", self._jdata_build("setActiveApp", {'uri': uri}))
+            print(response)
         except requests.exceptions.HTTPError as exception_instance:
             if log_errors:
                 _LOGGER.error("HTTPError: " + str(exception_instance))
@@ -448,9 +405,6 @@ class BraviaRC(object):
         except Exception as exception_instance:  # pylint: disable=broad-except
             if log_errors:
                 _LOGGER.error("Exception: " + str(exception_instance))
-        else:
-            content = response.content
-            return content
 
     def turn_on(self):
         """Turn the media player on."""
