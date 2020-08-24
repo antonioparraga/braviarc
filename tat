@@ -1,0 +1,217 @@
+[1mdiff --cc braviarc/braviarc.py[m
+[1mindex 9740531,2fe35f2..0000000[m
+[1m--- a/braviarc/braviarc.py[m
+[1m+++ b/braviarc/braviarc.py[m
+[36m@@@ -569,39 -577,26 +579,65 @@@[m [mclass BraviaRC(object)[m
+          return_value['media_position_perc'] = perc_playingtime[m
+  [m
+          return return_value[m
+[32m++<<<<<<< ours[m
+[32m +        [m
+[32m +    def get_system_info(self):[m
+[32m +        """Get info on TV."""[m
+[32m +        return_value = {}[m
+[32m +        resp = self.bravia_req_json("sony/system", self._jdata_build("getSystemInformation", None))[m
+[32m +        if resp is not None and not resp.get('error'):[m
+[32m +            #print('=>', resp, '<=')[m
+[32m +            system_content_data = resp.get('result')[0][m
+[32m +            return_value['name'] = system_content_data.get('name')[m
+[32m +            return_value['model'] = system_content_data.get('model')[m
+[32m +            return_value['language'] = system_content_data.get('language')[m
+[32m +        return return_value[m
+[32m +[m
+[32m +    def get_network_info(self):[m
+[32m +        """Get info on network."""[m
+[32m +        return_value = {}[m
+[32m +        resp = self.bravia_req_json("sony/system", self._jdata_build("getNetworkSettings", None))[m
+[32m +        if resp is not None and not resp.get('error'):[m
+[32m +            #print('=>', resp, '<=')[m
+[32m +            network_content_data = resp.get('result')[0][m
+[32m +            return_value['mac'] = network_content_data[0]['hwAddr'][m
+[32m +            return_value['ip'] = network_content_data[0]['ipAddrV4'][m
+[32m +            return_value['gateway'] = network_content_data[0]['gateway'][m
+[32m +        return return_value[m
+[32m +[m
+[32m +    def get_current_external_input_status(self):[m
+[32m +        """Get current external input status."""[m
+[32m +        return_value = [][m
+[32m +        resp = self.bravia_req_json([m
+[32m +            "sony/avContent",[m
+[32m +            self._jdata_build("getCurrentExternalInputsStatus", None),[m
+[32m +            log_errors=False,[m
+[32m +        )[m
+[32m +        if resp is not None and not resp.get("error"):[m
+[32m +            return_value = resp.get("result")[0][m
+[32m +        return return_value[m
+[32m++=======[m
+[32m+ [m
+[32m+     def get_network_info(self):[m
+[32m+         """Get info on network."""[m
+[32m+         return_value = {}[m
+[32m+         resp = self.bravia_req_json("sony/system", self._jdata_build("getNetworkSettings", None))[m
+[32m+         if resp is not None and not resp.get('error'):[m
+[32m+             network_content_data = resp.get('result')[0][m
+[32m+             return_value['mac'] = network_content_data[0]['hwAddr'][m
+[32m+             return_value['ip'] = network_content_data[0]['ipAddrV4'][m
+[32m+             return_value['gateway'] = network_content_data[0]['gateway'][m
+[32m+         return return_value[m
+[32m+ [m
+[32m+     def get_current_external_input_status(self):[m
+[32m+         """Get current external input status."""[m
+[32m+         return_value = [][m
+[32m+         resp = self.bravia_req_json([m
+[32m+             "sony/avContent",[m
+[32m+             self._jdata_build("getCurrentExternalInputsStatus", None),[m
+[32m+             log_errors=False,[m
+[32m+         )[m
+[32m+         if resp is not None and not resp.get("error"):[m
+[32m+             return_value = resp.get("result")[0][m
+[32m+         return return_value[m
+[32m++>>>>>>> theirs[m
+[1mdiff --git a/braviarc/braviarc.py b/braviarc/braviarc.py[m
+[1mindex 9740531..af03156 100644[m
+[1m--- a/braviarc/braviarc.py[m
+[1m+++ b/braviarc/braviarc.py[m
+[36m@@ -95,15 +95,15 @@[m [mclass BraviaRC(object):[m
+             response.raise_for_status()[m
+ [m
+         except requests.exceptions.HTTPError as exception_instance:[m
+[31m-            _LOGGER.error("[W] HTTPError: " + str(exception_instance))[m
+[32m+[m[32m            _LOGGER.exception("[W] HTTPError: " + str(exception_instance))[m
+             return False[m
+ [m
+         except requests.exceptions.Timeout as exception_instance:[m
+[31m-            _LOGGER.error("[W] Timeout occurred: " + str(exception_instance))[m
+[32m+[m[32m            _LOGGER.exception("[W] Timeout occurred: " + str(exception_instance))[m
+             return False[m
+ [m
+         except Exception as exception_instance:  # pylint: disable=broad-except[m
+[31m-            _LOGGER.error("[W] Exception: " + str(exception_instance))[m
+[32m+[m[32m            _LOGGER.exception("[W] Exception: " + str(exception_instance))[m
+             return False[m
+ [m
+         else:[m
+[36m@@ -263,8 +263,6 @@[m [mclass BraviaRC(object):[m
+                     if not resp.get('error'):[m
+                         original_content_list.extend(resp.get('result')[0])[m
+         [m
+[31m-        resp = self.bravia_req_json("sony/appControl",[m
+[31m-                                    self._jdata_build("getApplicationList", None))[m
+         if not resp.get('error'):[m
+             results = resp.get('result')[0][m
+             original_content_list+=results[m
+[36m@@ -297,10 +295,13 @@[m [mclass BraviaRC(object):[m
+         return_value = {}[m
+         resp = self.bravia_req_json("sony/system",[m
+                                     self._jdata_build("getSystemInformation"))[m
+[32m+[m[32m        _LOGGER.info(resp)[m
+         if resp is not None and not resp.get('error'):[m
+             system_content_data = resp.get('result')[0][m
+             return_value['name'] = system_content_data.get('name')[m
+             return_value['model'] = system_content_data.get('model')[m
+[32m+[m[32m            return_value['mac'] = system_content_data.get('mac')[m
+[32m+[m[32m            return_value['serial'] = system_content_data.get('serial')[m
+             return_value['language'] = system_content_data.get('language')[m
+         return return_value[m
+ [m
+[36m@@ -386,10 +387,9 @@[m [mclass BraviaRC(object):[m
+         if self._psk is not None:[m
+             headers['X-Auth-PSK'] = self._psk[m
+ [m
+[31m-        parsed_objects = {}[m
+[32m+[m[32m        parsed_objects = [][m
+ [m
+         url = 'http://{}/DIAL/sony/applist'.format(self._host)[m
+[31m-[m
+         try:[m
+             cookies = self._recreate_auth_cookie()[m
+             response = requests.get(url, cookies=cookies, timeout=TIMEOUT,[m
+[36m@@ -410,8 +410,12 @@[m [mclass BraviaRC(object):[m
+                    obj.getElementsByTagName("id")[0].firstChild:[m
+                     name = obj.getElementsByTagName("name")[0][m
+                     id_elm = obj.getElementsByTagName("id")[0][m
+[31m-                    parsed_objects[str(name.firstChild.nodeValue)] = \[m
+[31m-                        str(id_elm.firstChild.nodeValue)[m
+[32m+[m[32m                    icon_url = obj.getElementsByTagName("icon_url")[0][m
+[32m+[m[32m                    parsed_objects.append ({[m
+[32m+[m[32m                        "id": str(id_elm.firstChild.nodeValue),[m
+[32m+[m[32m                        "name": str(name.firstChild.nodeValue),[m
+[32m+[m[32m                        "icon_url": str(icon_url.firstChild.nodeValue),[m
+[32m+[m[32m                    })[m
+ [m
+         return parsed_objects[m
+ [m
+[36m@@ -419,18 +423,20 @@[m [mclass BraviaRC(object):[m
+         """Start an app by name"""[m
+         if len(self._app_list) == 0:[m
+             self._app_list = self.load_app_list(log_errors=log_errors)[m
+[31m-        if app_name in self._app_list:[m
+[31m-            return self._start_app(self._app_list[app_name],[m
+[31m-                                   log_errors=log_errors)[m
+[32m+[m[32m        for app in self._app_list:[m
+[32m+[m[32m            if app['id'] == app_name or app['name'] == app_name:[m
+[32m+[m[32m                return self._start_app(app,[m
+[32m+[m[32m                                    log_errors=log_errors)[m
+[32m+[m[32m        _LOGGER.warn('Can\'t find app for ' + app_name)[m
+ [m
+[31m-    def _start_app(self, app_id, log_errors=True):[m
+[32m+[m[32m    def _start_app(self, app, log_errors=True):[m
+         """Start an app by id"""[m
+         headers = {}[m
+ [m
+         if self._psk is not None:[m
+             headers['X-Auth-PSK'] = self._psk[m
+ [m
+[31m-        url = 'http://{}/DIAL/apps/{}'.format(self._host, app_id)[m
+[32m+[m[32m        url = 'http://{}/DIAL/apps/{}'.format(self._host, app['id'])[m
+ [m
+         try:[m
+             cookies = self._recreate_auth_cookie()[m
+[36m@@ -472,6 +478,10 @@[m [mclass BraviaRC(object):[m
+         """Turn off media player."""[m
+         self.send_req_ircc(self.get_command_code('PowerOff'))[m
+ [m
+[32m+[m[32m    def turn_off_command(self):[m
+[32m+[m[32m        """Turn off media player using the rest-api for Android TV."""[m
+[32m+[m[32m        self.bravia_req_json("sony/system", self._jdata_build("setPowerStatus", {"status": False}))[m
+[32m+[m
+     def volume_up(self):[m
+         """Volume up the media player."""[m
+         self.send_req_ircc(self.get_command_code('VolumeUp'))[m
+[36m@@ -569,6 +579,7 @@[m [mclass BraviaRC(object):[m
+         return_value['media_position_perc'] = perc_playingtime[m
+ [m
+         return return_value[m
+[32m+[m[32m<<<<<<< ours[m
+         [m
+     def get_system_info(self):[m
+         """Get info on TV."""[m
+[36m@@ -605,3 +616,28 @@[m [mclass BraviaRC(object):[m
+         if resp is not None and not resp.get("error"):[m
+             return_value = resp.get("result")[0][m
+         return return_value[m
+[32m+[m[32m=======[m
+[32m+[m
+[32m+[m[32m    def get_network_info(self):[m
+[32m+[m[32m        """Get info on network."""[m
+[32m+[m[32m        return_value = {}[m
+[32m+[m[32m        resp = self.bravia_req_json("sony/system", self._jdata_build("getNetworkSettings", None))[m
+[32m+[m[32m        if resp is not None and not resp.get('error'):[m
+[32m+[m[32m            network_content_data = resp.get('result')[0][m
+[32m+[m[32m            return_value['mac'] = network_content_data[0]['hwAddr'][m
+[32m+[m[32m            return_value['ip'] = network_content_data[0]['ipAddrV4'][m
+[32m+[m[32m            return_value['gateway'] = network_content_data[0]['gateway'][m
+[32m+[m[32m        return return_value[m
+[32m+[m
+[32m+[m[32m    def get_current_external_input_status(self):[m
+[32m+[m[32m        """Get current external input status."""[m
+[32m+[m[32m        return_value = [][m
+[32m+[m[32m        resp = self.bravia_req_json([m
+[32m+[m[32m            "sony/avContent",[m
+[32m+[m[32m            self._jdata_build("getCurrentExternalInputsStatus", None),[m
+[32m+[m[32m            log_errors=False,[m
+[32m+[m[32m        )[m
+[32m+[m[32m        if resp is not None and not resp.get("error"):[m
+[32m+[m[32m            return_value = resp.get("result")[0][m
+[32m+[m[32m        return return_value[m
+[32m+[m[32m>>>>>>> theirs[m
