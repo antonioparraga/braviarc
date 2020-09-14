@@ -368,6 +368,39 @@ class BraviaRC(object):
         self.bravia_req_json("sony/audio",
                              self._jdata_build("setAudioVolume", payload))
 
+    def load_scene_list(self):
+        """Load scene list from Sony Bravia."""
+        original_content_list = []
+        resp = self.bravia_req_json("sony/videoScreen",
+                                    self._jdata_build("getSceneSetting", None))
+
+        if not resp.get('error'):
+            results = resp.get('result')[0].get('candidate')
+            original_content_list+=results
+
+        return_value = collections.OrderedDict()
+        for content_item in original_content_list:
+            return_value[content_item['value'].capitalize()] = content_item['value']
+        return return_value
+
+    def get_current_scene(self):
+        """Get current scene info."""
+
+        resp = self.bravia_req_json("sony/videoScreen",
+                                    self._jdata_build("getSceneSetting",
+                                                      None))
+        if not resp.get('error'):
+            return resp.get('result')[0].get('currentValue')
+        else:
+            _LOGGER.error("JSON request error:" + json.dumps(resp, indent=4))
+        return None
+
+    def set_scene(self, scene):
+        """Set scene."""
+        payload = {"value": scene}
+        self.bravia_req_json("sony/videoScreen",
+                             self._jdata_build("setSceneSetting", payload))
+
     def _recreate_auth_cookie(self):
         """
         The default cookie is for URL/sony.

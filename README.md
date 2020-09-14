@@ -57,6 +57,19 @@ if braviarc.is_connected():
   #start a given app
   braviarc.start_app("Netflix")
 
+  #get picture modes (scenes)
+  scenes = braviarc.load_scene_list()
+  print (scenes)
+
+  #get current pictrue mode (scene)
+  current_scene = braviarc.get_current_scene()
+  print (current_scene)
+
+  #set picture mode to Cinema and check again
+  braviarc.set_scene(scenes.get('Cinema'))
+  current_scene = braviarc.get_current_scene()
+  print (current_scene)
+
   #turn off the TV
   braviarc.turn_off()
 
