@@ -5,15 +5,15 @@ By Antonio Parraga Navarro
 
 dedicated to Isabel
 """
-import logging
 import collections
+import datetime
 import json
+import logging
+import requests
 import socket
 import struct
-import requests
-from datetime import datetime
-import time
 import sys
+import time
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 TIMEOUT = 10
@@ -517,55 +517,23 @@ class BraviaRC(object):
         """Send the previous track command."""
         self.send_req_ircc(self.get_command_code('Prev'))
 
-    def calc_time(self, *times):
-        """Calculate the sum of times, value is returned in HH:MM."""
-        total_secs = 0
-        for tms in times:
-            time_parts = [int(s) for s in tms.split(':')]
-            total_secs += (time_parts[0] * 60 + time_parts[1]) * 60 + \
-                time_parts[2]
-        total_secs, sec = divmod(total_secs, 60)
-        hour, minute = divmod(total_secs, 60)
-        if hour >= 24:  # set 24:10 to 00:10
-            hour -= 24
-        return ("%02d:%02d" % (hour, minute))
+    def add_seconds(self, tm, secs):
+        """Adds seconds to time (HH:MM:SS).""" 
+        fulldate = datetime.datetime(100, 1, 1, tm.hour, tm.minute, tm.second)
+        fulldate = fulldate + datetime.timedelta(seconds=secs)
+        return fulldate.time()
 
     def playing_time(self, startdatetime, durationsec):
-        """Give starttime, endtime and percentage played.
-
-        Start time format: 2017-03-24T00:00:00+0100
-        Using that, we calculate number of seconds to end time.
-        """
-
-        date_format = "%Y-%m-%dT%H:%M:%S"
-        now = datetime.now()
-        stripped_tz = startdatetime[:-5]
-        start_date_time = datetime.strptime(stripped_tz, date_format)
-        start_time = (time.strptime(stripped_tz, date_format))
-
-        try:
-            playingtime = now - start_date_time
-        except TypeError:
-            playingtime = now - datetime(*start_time[0:6])
-
-        try:
-            starttime = datetime.time(start_date_time)
-        except TypeError:
-            starttime = datetime.time(datetime(*start_time[0:6]))
-
-        duration = time.strftime('%H:%M:%S', time.gmtime(durationsec))
-        endtime = self.calc_time(str(starttime), str(duration))
-        starttime = starttime.strftime('%H:%M')
-        perc_playingtime = int(round(((playingtime.seconds / durationsec) *
-                                      100), 0))
-
+        """Return starttime and endtime (HH:MM) of TV program."""
+        # startdatetime format 2017-03-24T00:00:00+0100
         return_value = {}
+        startdatetime = startdatetime[:19] # Remove timezone
 
-        return_value['start_time'] = starttime
-        return_value['end_time'] = endtime
-        return_value['media_position'] = playingtime.seconds
-        return_value['media_position_perc'] = perc_playingtime
+        starttime = datetime.datetime.strptime(startdatetime, "%Y-%m-%dT%H:%M:%S").time()
+        endtime = self.add_seconds(starttime, durationsec)
 
+        return_value['start_time'] = starttime.strftime("%H:%M")
+        return_value['end_time'] = endtime.strftime("%H:%M")
         return return_value
     
     def get_led_status(self):
